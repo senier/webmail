@@ -1,5 +1,6 @@
 import type { Email, Mailbox } from "./jmap/types";
 import { buildMailboxTree, type MailboxNode } from "./utils";
+import { withoutHiddenMailboxes } from "./mailbox-subscription";
 
 /** Header node that wraps the user's own folders when another account leads. */
 export const OWN_ACCOUNT_MOVE_NODE_PREFIX = "own-account-";
@@ -39,6 +40,7 @@ export function buildMoveTargets(
   mailboxes: Mailbox[],
   opts: { currentMailboxId?: string | null; ownerAccountId?: string },
 ): { tree: MailboxNode[]; targetIds: Set<string> } {
+  mailboxes = withoutHiddenMailboxes(mailboxes);
   const targetIds = new Set(
     mailboxes
       .filter(

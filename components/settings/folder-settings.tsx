@@ -7,12 +7,13 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { usePolicyStore } from '@/stores/policy-store';
 import { toast } from '@/stores/toast-store';
+import { isMailboxHidden } from '@/lib/mailbox-subscription';
 import { SettingsSection, SettingItem, Select } from './settings-section';
 import {
   Plus, Pencil, Trash2, Check, X, FolderPlus, Folder,
   Inbox, Send, FileText, Trash, ShieldAlert, Archive,
   Star, Heart, Bookmark, Tag, Flag, Briefcase, Users,
-  Bell, Zap, Globe, Lock, Eye, MessageSquare, Mail,
+  Bell, Zap, Globe, Lock, Eye, EyeOff, MessageSquare, Mail,
   AlertTriangle, NotebookPen, CalendarClock, BellOff,
   type AppIcon,
 } from '@/components/icons';
@@ -154,7 +155,7 @@ function SortableFolderRow({ id, title, children }: { id: string; title: string;
 export function FolderSettings() {
   const t = useTranslations('settings.folders');
   const { client } = useAuthStore();
-  const { mailboxes, fetchMailboxes, createMailbox, renameMailbox, deleteMailbox, setMailboxRole, reorderMailboxes, moveMailbox } = useEmailStore();
+  const { mailboxes, fetchMailboxes, createMailbox, renameMailbox, deleteMailbox, setMailboxRole, setMailboxSubscription, reorderMailboxes, moveMailbox } = useEmailStore();
 
   const sensors = useSensors(
     // Small activation distance so clicking the row's buttons still works.
@@ -383,6 +384,18 @@ export function FolderSettings() {
     }
   };
 
+  const handleSubscriptionChange = async (mailboxId: string, subscribed: boolean) => {
+    if (!client) return;
+    setIsLoading(true);
+    try {
+      await setMailboxSubscription(client, mailboxId, subscribed);
+    } catch {
+      toast.error(t('error_subscription'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const startEdit = (mb: { id: string; name: string }) => {
     setEditingId(mb.id);
     setEditingName(mb.name);
@@ -577,7 +590,7 @@ export function FolderSettings() {
                 />
               )}
             </div>
-            <span className="text-sm text-foreground truncate">{mb.name}</span>
+            <span className={cn('text-sm truncate', isMailboxHidden(mb) ? 'text-muted-foreground line-through' : 'text-foreground')}>{mb.name}</span>
             {mb.role && (
               <span className="text-xs px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium flex-shrink-0">
                 {t(`role_${mb.role}`)}
@@ -590,6 +603,15 @@ export function FolderSettings() {
             )}
           </div>
           <div className="flex items-center gap-0.5">
+            {!mb.role && (
+              <button
+                onClick={() => handleSubscriptionChange(mb.id, mb.isSubscribed === false)}
+                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
+                title={mb.isSubscribed === false ? t('subscribe') : t('unsubscribe')}
+              >
+                {mb.isSubscribed === false ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+            )}
             {mb.myRights?.mayCreateChild && (
               <button
                 onClick={() => startCreateSubfolder(mb.id)}

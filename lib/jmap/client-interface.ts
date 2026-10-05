@@ -138,7 +138,7 @@ export interface IJMAPClient {
   /** Email/changes since `sinceState`; null when the server cannot compute the delta. */
   getEmailChanges?(sinceState: string, accountId?: string, maxChanges?: number): Promise<CollectionChanges | null>;
   createMailbox(name: string, parentId?: string, accountId?: string): Promise<Mailbox>;
-  updateMailbox(mailboxId: string, changes: { name?: string; parentId?: string | null; role?: string | null; sortOrder?: number }, accountId?: string): Promise<void>;
+  updateMailbox(mailboxId: string, changes: { name?: string; parentId?: string | null; role?: string | null; sortOrder?: number; isSubscribed?: boolean }, accountId?: string): Promise<void>;
   // `removeEmails` destroys the folder's messages too (onDestroyRemoveEmails,
   // RFC 8621 §2.5) instead of failing with mailboxHasEmail.
   deleteMailbox(mailboxId: string, accountId?: string, options?: { removeEmails?: boolean }): Promise<void>;

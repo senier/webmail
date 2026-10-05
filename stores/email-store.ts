@@ -371,6 +371,7 @@ interface EmailStore {
   renameMailbox: (client: IJMAPClient, mailboxId: string, name: string) => Promise<void>;
   deleteMailbox: (client: IJMAPClient, mailboxId: string, options?: { removeEmails?: boolean }) => Promise<void>;
   setMailboxRole: (client: IJMAPClient, mailboxId: string, role: string | null) => Promise<void>;
+  setMailboxSubscription: (client: IJMAPClient, mailboxId: string, isSubscribed: boolean) => Promise<void>;
   reorderMailboxes: (client: IJMAPClient, orderedIds: string[]) => Promise<void>;
   moveMailbox: (client: IJMAPClient, mailboxId: string, newParentId: string | null, orderedSiblingIds?: string[]) => Promise<void>;
   emptyMailbox: (client: IJMAPClient, mailboxId: string) => Promise<void>;
@@ -5053,6 +5054,21 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       }
     } catch (error) {
       set({ error: error instanceof Error ? error.message : 'Failed to update folder role' });
+      throw error;
+    }
+  },
+
+  setMailboxSubscription: async (client, mailboxId, isSubscribed) => {
+    try {
+      const target = resolveMailboxMutationContext(client, mailboxId);
+      await target.client.updateMailbox(target.mailboxId, { isSubscribed }, target.accountId);
+      if (get().viewingAccountId) {
+        await refreshMailboxesForViewingAccount(client);
+      } else {
+        await get().fetchMailboxes(client);
+      }
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'Failed to update folder subscription' });
       throw error;
     }
   },

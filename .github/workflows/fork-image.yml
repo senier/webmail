@@ -1,8 +1,11 @@
 name: Fork image
 
-# Builds the patched fork and publishes ghcr.io/<owner>/webmail:latest (+ :<sha>).
-# Single-arch (amd64) to keep builds fast; add `platforms: linux/amd64,linux/arm64`
-# plus docker/setup-qemu-action if the host is ARM.
+# Publishes the patched fork to GHCR (amd64 only; add docker/setup-qemu-action
+# and `platforms: linux/amd64,linux/arm64` for an ARM host):
+#   ghcr.io/<owner>/webmail-lite:latest   static build behind nginx (Dockerfile.lite)
+#   ghcr.io/<owner>/webmail:latest        full Node.js edition (Dockerfile)
+# Optional repository variable JMAP_SERVER_URL is baked into the Lite image's
+# config.json as its default server.
 
 on:
   push:
@@ -17,6 +20,14 @@ permissions:
 jobs:
   image:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suffix: -lite
+            dockerfile: Dockerfile.lite
+          - suffix: ""
+            dockerfile: Dockerfile
     steps:
       - uses: actions/checkout@v4
 
@@ -31,11 +42,13 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
+          file: ${{ matrix.dockerfile }}
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/${{ github.repository }}${{ matrix.suffix }}:latest
+            ghcr.io/${{ github.repository }}${{ matrix.suffix }}:${{ github.sha }}
           build-args: |
             GIT_COMMIT=${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            ${{ matrix.suffix == '-lite' && format('LITE_JMAP_SERVER_URL={0}', vars.JMAP_SERVER_URL) || '' }}
+          cache-from: type=gha,scope=${{ matrix.dockerfile }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.dockerfile }}

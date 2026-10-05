@@ -7,6 +7,14 @@ const rootDir = path.resolve(__dirname, '../..');
 const localesDir = path.join(rootDir, 'locales');
 const referenceLocale = 'en';
 
+// Fork-only keys: translated in English only; other locales fall back to it at
+// runtime (see i18n/request.ts), so they are not required in every locale.
+const FORK_EN_ONLY_KEYS = new Set([
+  'settings.folders.subscribe',
+  'settings.folders.unsubscribe',
+  'settings.folders.error_subscription',
+]);
+
 function getLeafKeys(obj: Record<string, unknown>, prefix = ''): string[] {
   const keys: string[] = [];
   for (const key of Object.keys(obj)) {
@@ -119,7 +127,7 @@ describe('translations completeness', () => {
 
   it.each(otherLocales)('%s should have all keys from en', (locale) => {
     const localeKeys = new Set(getLeafKeys(loadLocale(locale)));
-    const missing = referenceKeys.filter((key) => !localeKeys.has(key));
+    const missing = referenceKeys.filter((key) => !localeKeys.has(key) && !FORK_EN_ONLY_KEYS.has(key));
 
     expect(missing, `Missing ${missing.length} keys in "${locale}":\n${missing.join('\n')}`).toEqual([]);
   });

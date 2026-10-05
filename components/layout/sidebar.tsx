@@ -43,6 +43,7 @@ import {
 } from "@/components/icons";
 import { cn, buildMailboxTree, MailboxNode } from "@/lib/utils";
 import { localizeMailboxName } from "@/lib/mailbox-label";
+import { withoutHiddenMailboxes } from "@/lib/mailbox-subscription";
 import {
   buildKeywordTree,
   countKeywordNodes,
@@ -1074,7 +1075,7 @@ function SidebarImpl({
   // so it does not appear twice. (#495)
   const isServerScheduledNode = (n: MailboxNode) => showScheduledMailbox && n.role === 'scheduled';
 
-  const mailboxTree = buildMailboxTree(mailboxes);
+  const mailboxTree = buildMailboxTree(withoutHiddenMailboxes(mailboxes));
   const ownTree = mailboxTree.filter(n => !n.id.startsWith('shared-account-') && !isServerScheduledNode(n));
   const hiddenSharedIds = hiddenSharedMailIds(hiddenSharedMailAccounts, activeAccountId);
   const sharedAccounts = mailboxTree.filter(n =>
@@ -1136,7 +1137,7 @@ function SidebarImpl({
         const accountMailboxList = isActive
           ? mailboxes
           : (accountMailboxes?.[account.id] ?? []);
-        const tree = buildMailboxTree(accountMailboxList).filter(
+        const tree = buildMailboxTree(withoutHiddenMailboxes(accountMailboxList)).filter(
           (n) => !n.id.startsWith('shared-account-') && !(isActive && isServerScheduledNode(n))
         );
         return { account, isActive, tree };

@@ -25,7 +25,7 @@ folders are never hidden.
 ```sh
 git remote add upstream https://github.com/bulwarkmail/webmail.git   # once
 git fetch upstream
-git checkout feature/hide-unsubscribed-mailboxes
+git checkout main
 git merge upstream/main        # conflicts are most likely in sidebar.tsx / email-store.ts
 npm ci && npm run typecheck && npx vitest run lib/__tests__/mailbox-subscription.test.ts lib/__tests__/move-targets.test.ts
 git push

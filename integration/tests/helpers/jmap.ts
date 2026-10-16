@@ -201,12 +201,22 @@ export class JmapClient {
     return (await this.mailboxes(accountId)).find((m) => m.name === name);
   }
 
-  /** Create a folder (top-level) and return its id. Idempotent by name. */
-  async createMailbox(name: string, parentId: string | null = null, accountId: string = this.accountId): Promise<string> {
+  /**
+   * Create a folder (top-level) and return its id. Idempotent by name.
+   * Subscribed by default, as Bulwark and IMAP clients create them: Stalwart
+   * leaves a bare Mailbox/set create unsubscribed, and unsubscribed folders
+   * are hidden from the sidebar in this fork.
+   */
+  async createMailbox(
+    name: string,
+    parentId: string | null = null,
+    accountId: string = this.accountId,
+    isSubscribed = true,
+  ): Promise<string> {
     const existing = await this.mailboxByName(name, accountId);
     if (existing) return existing.id;
     const r = await this.request([
-      ['Mailbox/set', { accountId, create: { new: { name, parentId } } }, '0'],
+      ['Mailbox/set', { accountId, create: { new: { name, parentId, isSubscribed } } }, '0'],
     ]);
     const created = r.methodResponses[0][1].created?.new;
     if (!created) throw new Error(`Mailbox/set create failed: ${JSON.stringify(r.methodResponses[0][1])}`);
